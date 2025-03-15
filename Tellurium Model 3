@@ -1,0 +1,82 @@
+import tellurium as te
+import matplotlib.pyplot as plt
+
+model = '''
+  var LatentHIV, ActiveHIV, ReactivatedHIV, DeadCells, HealthyCells, DTA
+
+  k_infect_base = 1.978e-5
+  k_infect_log = 0.02
+  infection_max = 4.74 
+  T_infect_mid = 1200
+
+  k6= k_infect_base + (infection_max - k_infect_base) / (1 + exp(-k_infect_log * (time - T_infect_mid)))
+
+  k7 = (1.1e8 / (24 * 60 * 60)) * 2.8855e-4
+  maxHealthy = 5.7710e-4
+  k_immune = 0
+  nat_deatha=  0.000892656
+  nat_deathl= 2.17e-5
+
+  k_cART_base = 0.75
+  k_cART_log = 0.014437
+  cART_half_life = 48
+  T_mid = 450
+
+  k_cART_eff = k_cART_base / (1 + exp(-k_cART_log * (time - T_mid)))
+
+  k_LRA =  0.002083
+  k3 = 0.0001166
+
+  infection_spread = ((ActiveHIV * k6 * (1 - k_cART_eff)) * k3) + ((LatentHIV * k_LRA * k6 * k3))
+
+  LatentHIV' = (infection_spread * 0.015) - (nat_deathl * LatentHIV) - (LatentHIV * k_LRA)
+  ActiveHIV' = (infection_spread * 0.985) - (nat_deatha * ActiveHIV) - (k_cART_eff * ActiveHIV) - (k3 * ActiveHIV)
+  ReactivatedHIV' = (k_LRA * LatentHIV) - (k3 * ReactivatedHIV) - (nat_deatha * ReactivatedHIV)
+  DTA' = k3 * (ActiveHIV + ReactivatedHIV + LatentHIV) - (k3 * DTA)
+  DeadCells' = (k_immune * ActiveHIV) + (k_immune * ReactivatedHIV) + ((ActiveHIV + ReactivatedHIV)) + (k3 * DTA * ActiveHIV)
+  HealthyCells' = -infection_spread + (k7 * (1 - (HealthyCells / maxHealthy)))
+
+  LatentHIV = 9.375e-4
+  ActiveHIV = 0.0615625
+  ReactivatedHIV = 0
+  DeadCells = 0
+  HealthyCells = 2.8855e-4
+  DTA = 0
+''' 
+
+r = te.loada(model)
+result = r.simulate(0, 4380, 1000)
+
+time = result[:, 0]
+latent_hiv = result[:, 1]
+active_hiv = result[:, 2]
+reactivated_hiv = result[:, 3]
+dead_cells = result[:, 4]
+healthy_cells = result[:, 5]
+dta = result[:, 6]
+
+plt.figure(figsize=(12, 7))
+plt.plot(time, latent_hiv, label="Latent HIV Cells", linewidth=2)
+plt.plot(time, active_hiv, label="Active HIV Cells", linewidth=2)
+plt.plot(time, reactivated_hiv, label="Reactivated HIV Cells", linewidth=2, linestyle='dashed')
+plt.xlabel('Time (hours)')
+plt.ylabel('Concentration (µM)')
+plt.legend()
+plt.grid(True)
+plt.title('HIV Population Dynamics with Latency Reactivation and Marker')
+plt.show()
+
+initial_total_hiv = 0.00000876 + 0.00149007 + 0.00099826
+final_total_hiv = latent_hiv[-1] + active_hiv[-1] + reactivated_hiv[-1]
+marker_effectiveness_hiv = ((initial_total_hiv - final_total_hiv) / initial_total_hiv) * 100
+initial_healthy_cd4 = 2.8855e-4
+marker_effectiveness_cd4 = ((healthy_cells[-1] - initial_healthy_cd4) / initial_healthy_cd4) * 100
+
+print(f"Final Latent HIV Cells: {latent_hiv[-1]:.8f} µM")
+print(f"Final Active HIV Cells: {active_hiv[-1]:.8f} µM")
+print(f"Final Reactivated HIV Cells: {reactivated_hiv[-1]:.8f} µM")
+print(f"Final Dead Cells (Apoptosis): {dead_cells[-1]:.8f} µM")
+print(f"Final DTA Concentration: {dta[-1]:.8f} µM")
+print(f"Final Healthy CD4+ T Cells: {healthy_cells[-1]:.8f} µM")
+print(f"Marker Effectiveness in Reducing Viral Reservoir: {marker_effectiveness_hiv:.8f}%")
+print(f"Marker Effectiveness in Maintaining Healthy CD4+ T Cells: {marker_effectiveness_cd4:.8f}%")
