@@ -2,71 +2,54 @@ import tellurium as te
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define the updated system of differential equations
 model = '''
-  # Variables
   var LatentHIV, ActiveHIV, DeadCells, HealthyCells
 
-  # Parameters
-# Infection spread parameters
- k_infect_base = 1.978e-5     # Baseline infection rate (k6 value)
+  k_infect_base = 1.978e-5    
 k_infect_log = 0.02
 infection_max = 4.74 
-T_infect_mid = 1200     # Midpoint of infection growth (in hours)
+T_infect_mid = 1200     
 
-# Logistic-adjusted infection spread rate
 k6= k_infect_base + (infection_max - k_infect_base) / (1 + exp(-k_infect_log * (time - T_infect_mid)))
 
-  k7 = (1.1e8 / (24 * 60 * 60)) * 2.8855e-4  #CD4+ T cell regeneration rate
-  maxHealthy = 5.7710e-4  # Maximum healthy CD4+ T cell concentration
+  k7 = (1.1e8 / (24 * 60 * 60)) * 2.8855e-4  
+  maxHealthy = 5.7710e-4  
   k_immune = 0
   nat_deatha=  0.000892656
  nat_deathl= 2.17e-5
 
-  # cART efficacy parameters (logarithmic impact)
-  k_cART_base = 0.75  # Baseline cART efficacy (75%)
+  k_cART_base = 0.75  
   k_cART_log = 0.014437
-  cART_half_life = 48  # Half-life of cART effect in hours
+  cART_half_life = 48  
   T_mid = 450
 
-  # Log-adjusted cART suppression (delayed effect)
   k_cART_eff = k_cART_base / (1 + exp(-k_cART_log * (time - T_mid)))
 
-
-  # Infection spread equation (gradual cART impact)
 infection_spread = (ActiveHIV * k6 * (1 - k_cART_eff))
 
-  # Latent HIV dynamics
   LatentHIV' = (infection_spread * 0.015) - (nat_deathl * LatentHIV)
 
-  # Active HIV dynamics with slow suppression
-  ActiveHIV' = (infection_spread * 0.985)  - (nat_death * ActiveHIV) - (k_cART_eff * ActiveHIV)
+  ActiveHIV' = (infection_spread * 0.985)  - (nat_deatha * ActiveHIV) - (k_cART_eff * ActiveHIV)
 
-  # Dead cells accumulation
   DeadCells' = k_immune * ActiveHIV
 
-  # Healthy CD4+ T cell regeneration
   HealthyCells' = -infection_spread + (k7 * (1 - (HealthyCells / maxHealthy)))
 
-  # Initial Conditions
   LatentHIV = 9.375e-4
   ActiveHIV = 0.0615625
   DeadCells = 0         
   HealthyCells = 2.8855e-4  
 '''
 
-# Create and simulate the model
 r = te.loada(model)
 result = r.simulate(0, 4380, 1000)
 
-# Extract data
 time = result[:, 0]
 latent_hiv = result[:, 1]
 active_hiv = result[:, 2]
 dead_cells = result[:, 3]
 healthy_cells = result[:, 4]
 
-# Plot results
 plt.figure(figsize=(12, 7))
 plt.plot(time, latent_hiv, label="Latent HIV Cells", linewidth=2)
 plt.plot(time, active_hiv, label="Active HIV Cells", linewidth=2)
@@ -81,8 +64,8 @@ plt.grid(True)
 plt.title('HIV Population Dynamics with Optimized cART Suppression')
 plt.show()
 
-# Output final values
 print(f"Final Latent HIV Cells: {latent_hiv[-1]:.8f} µM")
 print(f"Final Active HIV Cells: {active_hiv[-1]:.8f} µM")
 print(f"Final Dead Cells: {dead_cells[-1]:.8f} µM")
 print(f"Final Healthy CD4+ T Cells: {healthy_cells[-1]:.8f} µM")
+
