@@ -217,6 +217,30 @@ set breed healthy-cells
 set color green
 ]
 ]
+ask reactivated-hiv-cells with [treated0 = false] [
+if random-float 1 < cart-efficacy [
+set cart-kill-count cart-kill-count + 1
+set treated0 true
+set breed healthy-cells
+set color green
+]
+]
+  ask reactivated-new-active-cells with [treated0 = false] [
+if random-float 1 < cart-efficacy [
+set cart-kill-count cart-kill-count + 1
+set treated0 true
+set breed healthy-cells
+set color green
+]
+]
+ask reactivated-new-latent-cells with [treated0 = false] [
+if random-float 1 < cart-efficacy [
+set cart-kill-count cart-kill-count + 1
+set treated0 true
+set breed healthy-cells
+set color green
+]
+]
 ask reactivated-new-active-cells with [treated1 = false]  [
 if random-float 1 < immune-efficacy [
 die
