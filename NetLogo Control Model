@@ -36,10 +36,10 @@ reset-ticks
 end
 
 to run-trials
-file-open (word user-directory "/Control.csv")
+file-open (word user-directory "/control.csv")
 file-print "Trial,Healthy,Latent,Active,Reactivated,New Active,New Latent,Total Infected"
 no-display
-repeat 2 [
+repeat 100 [
 set trial-number trial-number + 1
 setup-trial
 while [ticks < 50] [ go ]
@@ -102,7 +102,7 @@ set size 0.7
 setxy random-xcor random-ycor
 ]
 set immune-efficacy 0.0032
-set cart-efficacy 0.045
+set cart-efficacy 0.0582
 set lra-efficacy 0.0021
 reset-ticks
 end
@@ -116,80 +116,85 @@ ask lra-molecules [
 let target one-of turtles with [breed != lra-molecules and breed != active-hiv-cells] in-radius 1
 if random-float 1 < lra-efficacy and breed != healthy-cells and target != nobody [
 ask target [
-   set breed reactivated-hiv-cells
- ]
+set breed reactivated-hiv-cells
 ]
 ]
+]
+
 ask reactivated-hiv-cells [
-let num-to-infect min (list (5) count healthy-cells in-radius 2)
+let num-to-infect min (list (8) count healthy-cells in-radius 2)
 
 if num-to-infect > 0 [
 ask n-of num-to-infect healthy-cells in-radius 2 [
-if random-float 1 < 0.04 [
-  set breed reactivated-new-latent-cells
-  set color cyan
+if random-float 1 < 0.015 [
+set breed reactivated-new-latent-cells
+set color cyan
 ]
-if random-float 1 >= 0.04 [
-  set breed reactivated-new-active-cells
-  set color orange
+if random-float 1 >= 0.015 [
+set breed reactivated-new-active-cells
+set color orange
 ]
 ]
 ]
 die
 ]
+
 ask active-hiv-cells [
-let num-to-infect min (list (5) count healthy-cells in-radius 2)
+let num-to-infect min (list (8) count healthy-cells in-radius 2)
 
 if num-to-infect > 0 [
 ask n-of num-to-infect healthy-cells in-radius 2 [
-if random-float 1 < 0.04 [
-  set breed natural-new-latent-cells
-  set color cyan
+if random-float 1 < 0.015 [
+set breed natural-new-latent-cells
+set color cyan
 ]
-if random-float 1 >= 0.04 [
-  set breed natural-new-active-cells
-  set color orange
+if random-float 1 >= 0.015 [
+set breed natural-new-active-cells
+set color orange
 ]
 ]
 ]
 die
 ]
+
 ask natural-new-active-cells [
 ask active-hiv-cells [
-let num-to-infect min (list (5) count healthy-cells in-radius 2)
+let num-to-infect min (list (8) count healthy-cells in-radius 2)
 
 if num-to-infect > 0 [
 ask n-of num-to-infect healthy-cells in-radius 2 [
-if random-float 1 < 0.04 [
-  set breed newly-infected-latent-cells
-  set color cyan
+if random-float 1 < 0.015 [
+set breed newly-infected-latent-cells
+set color cyan
 ]
-if random-float 1 >= 0.04 [
-  set breed newly-infected-active-cells
-  set color orange
+if random-float 1 >= 0.015 [
+set breed newly-infected-active-cells
+set color orange
 ]
 ]
 ]
+
 die
 ]
 ]
 
 ask reactivated-new-active-cells [
 ask active-hiv-cells [
-let num-to-infect min (list (5 + random 2) count healthy-cells in-radius 2)
+let num-to-infect min (list (8 + random 2) count healthy-cells in-radius 2)
 
 if num-to-infect > 0 [
 ask n-of num-to-infect healthy-cells in-radius 2 [
-if random-float 1 < 0.04 [
-  set breed newly-infected-latent-cells
-  set color cyan
+if random-float 1 < 0.015 [
+set breed newly-infected-latent-cells
+set color cyan
 ]
-if random-float 1 >= 0.04 [
-  set breed newly-infected-active-cells
-  set color orange
+if random-float 1 >= 0.015 [
+set breed newly-infected-active-cells
+set color orange
 ]
 ]
 ]
+
 die
 ]
 ]
@@ -209,6 +214,7 @@ set breed healthy-cells
 set color green
 ]
 ]
+
 ask natural-new-active-cells with [treated0 = false] [
 if random-float 1 < cart-efficacy [
 set cart-kill-count cart-kill-count + 1
@@ -217,48 +223,26 @@ set breed healthy-cells
 set color green
 ]
 ]
-ask reactivated-hiv-cells with [treated0 = false] [
-if random-float 1 < cart-efficacy [
-set cart-kill-count cart-kill-count + 1
-set treated0 true
-set breed healthy-cells
-set color green
-]
-]
-  ask reactivated-new-active-cells with [treated0 = false] [
-if random-float 1 < cart-efficacy [
-set cart-kill-count cart-kill-count + 1
-set treated0 true
-set breed healthy-cells
-set color green
-]
-]
-ask reactivated-new-latent-cells with [treated0 = false] [
-if random-float 1 < cart-efficacy [
-set cart-kill-count cart-kill-count + 1
-set treated0 true
-set breed healthy-cells
-set color green
-]
-]
-ask reactivated-new-active-cells with [treated1 = false]  [
+
+ask reactivated-new-active-cells with [treated1 = false] [
 if random-float 1 < immune-efficacy [
 die
 set treated1 true
 ]
 ]
-ask natural-new-active-cells with [treated1 = false]  [
+ask natural-new-active-cells with [treated1 = false] [
 if random-float 1 < immune-efficacy [
 die
 set treated1 true
 ]
 ]
-ask active-hiv-cells with [treated1 = false]  [
+ask active-hiv-cells with [treated1 = false] [
 if random-float 1 < immune-efficacy [
 die
 set treated1 true
 ]
 ]
+
 tick
 end
 
@@ -272,7 +256,7 @@ let new-latent count newly-infected-latent-cells
 let infected-count new-active + new-latent
 
 set total-healthy healthy-count
-set total-latent  latent-count
+set total-latent latent-count
 set total-active active-count
 set total-reactivated total-reactivated + reactivated-count
 set total-new-active total-new-active + new-active
