@@ -3,46 +3,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 model = '''
-  var LatentHIV, ActiveHIV, ReactivatedHIV, DeadCells, HealthyCells
+  var LatentHIV, ActiveHIV, ReactivatedHIV
 
-  k_infect_base = 1.978e-5
-k_infect_log = 0.02
-infection_max = 4.74 
-T_infect_mid = 1200
+  k_infect_base = .00542
+  k_infect_log = 0.02
+  infection_max = 4.74 
+  T_infect_mid = 1200
 
-k6= k_infect_base + (infection_max - k_infect_base) / (1 + exp(-k_infect_log * (time - T_infect_mid)))
+  k6= k_infect_base + (infection_max - k_infect_base) / (1 + exp(-k_infect_log * (time - T_infect_mid)))
 
-  k7 = (1.1e8 / (24 * 60 * 60)) * 2.8855e-4
-  maxHealthy = 5.7710e-4
-  k_immune = 0
-  nat_deatha=  0.000892656
- nat_deathl= 2.17e-5
 
-  k_cART_base = 0.75
+  nat_deatha=  0.0125
+  nat_deathl= 2.17e-5
+
+  k_cART_base = 0.95
   k_cART_log = 0.014437
   cART_half_life = 48
-  T_mid = 450
+  T_mid = 700
 
   k_cART_eff = k_cART_base / (1 + exp(-k_cART_log * (time - T_mid)))
 
-  k_LRA =  0.002083
+  k_LRA =  0.002193
 
-infection_spread = (ActiveHIV * k6 * (1 - k_cART_eff)) + (LatentHIV*k_LRA * k6)
+infection_spread = (ActiveHIV * k6 * (1 - k_cART_eff)) + (LatentHIV*k_LRA * k6* (1 - k_cART_eff))
 
   LatentHIV' = (infection_spread * 0.015) - (nat_deathl * LatentHIV) - (k_LRA * LatentHIV)
 
-  ActiveHIV' = (infection_spread * 0.985)  - (nat_deatha* ActiveHIV) - (k_cART_eff * ActiveHIV)
+  ActiveHIV' = (infection_spread * 0.985)  - (nat_deatha* ActiveHIV) - ((k_cART_eff)*ActiveHIV)
 
   ReactivatedHIV' = (k_LRA * LatentHIV) - (nat_deatha* ReactivatedHIV)
 
-  DeadCells' = (k_immune * ActiveHIV) + (k_immune * ReactivatedHIV)
 
-  HealthyCells' = -infection_spread + (k7 * (1 - (HealthyCells / maxHealthy)))
 
   LatentHIV = 9.375e-4
   ActiveHIV = 0.0615625
   ReactivatedHIV = 0
-  DeadCells = 0         
   HealthyCells = 2.8855e-4  
 '''
 
@@ -61,9 +56,6 @@ plt.plot(time, latent_hiv, label="Latent HIV Cells", linewidth=2)
 plt.plot(time, active_hiv, label="Active HIV Cells", linewidth=2)
 plt.plot(time, reactivated_hiv, label="Reactivated HIV Cells", linewidth=2, linestyle='dashed')
 
-plt.axvline(x=840, color='gray', linestyle='--', label="840 hours (1-log drop)")
-plt.axvline(x=4380, color='red', linestyle='--', label="4380 hours (10-log drop)")
-
 plt.xlabel('Time (hours)')
 plt.ylabel('Concentration (µM)')
 plt.legend()
@@ -71,8 +63,8 @@ plt.grid(True)
 plt.title('HIV Population Dynamics with Latency Reactivation')
 plt.show()
 
+
 print(f"Final Latent HIV Cells: {latent_hiv[-1]:.8f} µM")
 print(f"Final Active HIV Cells: {active_hiv[-1]:.8f} µM")
 print(f"Final Reactivated HIV Cells: {reactivated_hiv[-1]:.8f} µM")
-print(f"Final Dead Cells: {dead_cells[-1]:.8f} µM")
-print(f"Final Healthy CD4+ T Cells: {healthy_cells[-1]:.8f} µM")
+
